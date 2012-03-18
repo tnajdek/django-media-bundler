@@ -217,13 +217,16 @@ class PngSpriteBundle(Bundle):
                 css.write(self.make_css(os.path.basename(box.filename), props))
 
     CSS_REGEXP = re.compile(r"[^a-zA-Z\-_]")
+    VALID_CSS_CLASS_REGEXP = re.compile(r"[_a-zA-Z]+[_a-zA-Z0-9-]")
 
     def css_class_name(self, rule_name):
         name = self.name
         if rule_name:
             name += "-" + rule_name
         name = name.replace(" ", "-").replace(".", "-")
-        return self.CSS_REGEXP.sub("", name)
+        if(not self.VALID_CSS_CLASS_REGEXP.match(name)):
+            name = self.CSS_REGEXP.sub("", name)
+        return name
 
     def make_css(self, name, props):
         # We try to format it nicely here in case the user actually looks at it.
