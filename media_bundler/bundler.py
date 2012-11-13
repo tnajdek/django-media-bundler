@@ -72,6 +72,9 @@ class Bundle(object):
             return PngSpriteBundle(attrs["name"], attrs["path"], attrs["url"],
                                    attrs["files"], attrs["type"],
                                    attrs["css_file"])
+        elif attrs["type"] == "less":
+            return LessBundle(attrs["name"], attrs["path"], attrs["url"],
+                             attrs["type"], attrs["files"])
         else:
             raise InvalidBundleType(attrs["type"])
 
@@ -139,6 +142,34 @@ class CssBundle(Bundle):
     def _make_bundle(self):
         minifier = minify_css if self.minify else None
         self.do_text_bundle(minifier)
+
+
+class LessBundle(Bundle):
+    """Bundle for Less css complier."""
+
+    def __init__(self, name, path, url, type, files):
+        super(LessBundle, self).__init__(name, path, url, files, type)
+
+    def get_extension(self):
+        return ".css"
+
+    def _make_bundle(self):
+        css_path = self.get_bundle_path()
+        tmp_path = css_path + '.tmp'
+        os.mkdir(tmp_path)
+        destinations = list()
+        for path in self.get_paths():
+            filename = os.path.basename(path)
+            destination = os.path.join(tmp_path, filename)
+            subprocess.call(['lessc', path, destination])
+            destinations.append(destination)
+        self.do_text_bundle(destinations, css_path)
+        shutil.rmtree(tmp_path)
+
+    def do_text_bundle(self, source_css_files, destination_css_file):
+        with open(destination_css_file, "w") as output:
+                generator = concatenate_files(source_css_files)
+                output.write("".join(generator))
 
 
 class PngSpriteBundle(Bundle):
